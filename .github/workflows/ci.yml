@@ -19,3 +19,19 @@ jobs:
       run: docker tag my-image-name:${{github.run_number}} ${{secrets.Registry_Username}}/my-image-name:${{github.run_number}}  
     - name: push image to docker hub   
       run: docker push  ${{secrets.Registry_Username}}/my-image-name:${{github.run_number}}  
+  
+deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH to Server 
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 52.87.175.97
+          username: ec2-user
+          key: ${{secrets.KEY}}
+          script: |
+              docker stop resume || echo ""
+              docker rm resume || echo ""
+              docker run -d --name resume -p 8080:5001 ${{secrets.Registry_Username}}/my-image-name:${{github.run_number}}
+
